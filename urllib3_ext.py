@@ -75,8 +75,9 @@ class HTTPResponse(urllib3.HTTPResponse):
 
     def raise_for_status(self):
         if not self.ok:
-            raise urllib3.exceptions.HTTPError('%s %s Error for url: %s' % (
-                self.status, 'Server' if self.status >= 500 else 'Client', self.url))
+            raise urllib3.exceptions.HTTPError(
+                f"{self.status} {'Server' if self.status >= 500 else 'Client'} Error for url: {self.url}"
+            )
 
 
 _DEFAULT_POOL = PoolManager()
