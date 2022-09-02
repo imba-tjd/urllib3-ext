@@ -5,6 +5,11 @@ import urllib3
 from functools import cached_property
 import threading
 from base64 import b64encode
+import os
+
+if urllib3.__version__[0] != '2':  # type: ignore
+    import importlib
+    globals()['urllib3'] = importlib.import_module('_vendor.urllib3.src.urllib3')
 
 
 class PoolManager(urllib3.PoolManager):
@@ -12,9 +17,17 @@ class PoolManager(urllib3.PoolManager):
         'Accept-Encoding': 'gzip',
     }
 
+    def __new__(cls, *args, **kwargs):
+        if os.getenv('HTTP_PROXY'):
+            return urllib3.ProxyManager.__new__(cls, *args, **kwargs)
+        else:
+            return super().__new__(cls, *args, **kwargs)
+
     def __init__(self, **connection_pool_kw):
         connection_pool_kw.setdefault('timeout', 3)
         connection_pool_kw['headers'] = self.default_headers | connection_pool_kw.get('headers', {})
+        if hp := os.getenv('HTTP_PROXY'):
+            connection_pool_kw['proxy_url'] = hp
         super().__init__(**connection_pool_kw)
         self.cookies = connection_pool_kw.get('cookies') or {}
 

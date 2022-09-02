@@ -4,16 +4,16 @@ A wrapper prividing some convenient methods based on [urllib3 2.0](https://urlli
 
 Features:
 
-* drop-in replacement of PoolManager
+* drop-in replacement for PoolManager
 * gzip by default
 * timeout=3 by default
 * pm.get()/postjson()/postform()/head()
 * resp.text/cookie; pm.cookie
 * auth=(user,passwd)
+* HTTP_PROXY
 
 Install:
 
 ```bash
-pip install https://github.com/urllib3/urllib3/archive/refs/heads/main.zip  # 2.0 hasn't been released
 pip install git+https://github.com/imba-tjd/urllib3-ext
 ```

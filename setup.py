@@ -1,9 +1,7 @@
 import setuptools
 setuptools.setup(
     name='urllib3-ext',
-    version='1.0',
+    version='2.0b1',
     py_modules=['urllib3_ext'],
-    # install_requires=['urllib3>=2']
+    packages=['_vendor.urllib3.src.urllib3']
 )
-
-assert __import__('urllib3').__version__[0] == '2'
