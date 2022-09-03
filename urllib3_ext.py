@@ -12,16 +12,17 @@ if urllib3.__version__[0] != '2':  # type: ignore
     globals()['urllib3'] = importlib.import_module('_vendor.urllib3.src.urllib3')
 
 
-class PoolManager(urllib3.PoolManager):
+class PMMeta(type):
+    def __new__(cls, name, bases, ns):
+        if os.getenv('HTTP_PROXY'):
+            bases = (urllib3.ProxyManager,)
+        return super().__new__(cls, name, bases, ns)
+
+
+class PoolManager(urllib3.PoolManager, metaclass=PMMeta):
     default_headers = {
         'Accept-Encoding': 'gzip',
     }
-
-    def __new__(cls, *args, **kwargs):
-        if os.getenv('HTTP_PROXY'):
-            return urllib3.ProxyManager.__new__(cls, *args, **kwargs)
-        else:
-            return super().__new__(cls, *args, **kwargs)
 
     def __init__(self, **connection_pool_kw):
         connection_pool_kw.setdefault('timeout', 3)
@@ -47,10 +48,10 @@ class PoolManager(urllib3.PoolManager):
         self.clear()
 
     def request(self, *args, **kwargs):
-        kwargs['headers'] |= (self.headers
-                              | {'Cookie': ';'.join((f'{k}={v}' for k, v in self.cookies.items()))}
-                              | {'authorization': 'Basic '+b64encode(f'{u}:{p}'.encode('latin-1')).decode() for u, p in kwargs.get('auth', {})}
-                              | kwargs.get('headers', {}))
+        kwargs['headers'] = (self.headers
+                             | {'Cookie': ';'.join((f'{k}={v}' for k, v in self.cookies.items()))}
+                             | {'authorization': 'Basic '+b64encode(f'{u}:{p}'.encode('latin-1')).decode() for u, p in kwargs.get('auth', {})}
+                             | kwargs.get('headers', {}))
         resp = HTTPResponse._wrap(super().request(*args, **kwargs))
         with threading.Lock():
             self.cookies |= resp.cookies
