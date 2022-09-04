@@ -1,15 +1,23 @@
 '''Drop-in replacement of PoolManager'''
 __all__ = ('PoolManager', 'HTTPResponse', 'request')
 
-import urllib3
 from functools import cached_property
 import threading
 from base64 import b64encode
 import os
 
-if urllib3.__version__[0] != '2':  # type: ignore
-    import importlib
-    globals()['urllib3'] = importlib.import_module('_vendor.urllib3.src.urllib3')
+try:
+    import urllib3
+    if urllib3.__version__[0] != '2':  # type: ignore
+        raise ImportError
+except ImportError:
+    import sys
+    if 'urllib3' in sys.modules:
+        del sys.modules['urllib3']
+    sys.path.insert(0, os.path.dirname(__file__) + '/urllib3_ext_vendor.py')
+    import urllib3
+    sys.path[:] = sys.path[1:]
+    del sys.modules['urllib3']
 
 
 class PMMeta(type):

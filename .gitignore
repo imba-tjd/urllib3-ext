@@ -1,3 +1,5 @@
 /__pycache__
 /*.egg-info
 /build
+/urllib3_ext_vendor.py
+/*.whl
