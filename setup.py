@@ -15,6 +15,6 @@ if not os.path.exists('urllib3_ext_vendor.py'):
 import setuptools
 setuptools.setup(
     name='urllib3-ext',
-    version='2.0b3',
+    version='2.0b4',
     py_modules=['urllib3_ext', 'urllib3_ext_vendor'],
 )

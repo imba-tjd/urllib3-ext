@@ -20,14 +20,7 @@ except ImportError:
     del sys.modules['urllib3']
 
 
-class PMMeta(type):
-    def __new__(cls, name, bases, ns):
-        if os.getenv('HTTP_PROXY'):
-            bases = (urllib3.ProxyManager,)
-        return super().__new__(cls, name, bases, ns)
-
-
-class PoolManager(urllib3.PoolManager, metaclass=PMMeta):
+class PoolManagerExt(urllib3.PoolManager):
     default_headers = {
         'Accept-Encoding': 'gzip',
     }
@@ -35,8 +28,6 @@ class PoolManager(urllib3.PoolManager, metaclass=PMMeta):
     def __init__(self, **connection_pool_kw):
         connection_pool_kw.setdefault('timeout', 3)
         connection_pool_kw['headers'] = self.default_headers | connection_pool_kw.get('headers', {})
-        if hp := os.getenv('HTTP_PROXY'):
-            connection_pool_kw['proxy_url'] = hp
         super().__init__(**connection_pool_kw)
         self.cookies = connection_pool_kw.get('cookies') or {}
 
@@ -64,6 +55,19 @@ class PoolManager(urllib3.PoolManager, metaclass=PMMeta):
         with threading.Lock():
             self.cookies |= resp.cookies
         return resp
+
+
+class ProxyManagerExt(PoolManagerExt, urllib3.ProxyManager):
+    pass
+
+
+def PoolManager(**connection_pool_kw):
+    if hp := os.getenv('HTTP_PROXY'):
+        connection_pool_kw['proxy_url'] = hp
+    if 'proxy_url' in connection_pool_kw:
+        return ProxyManagerExt(**connection_pool_kw)
+    else:
+        return PoolManagerExt(**connection_pool_kw)
 
 
 class HTTPResponse(urllib3.HTTPResponse):
@@ -101,8 +105,11 @@ class HTTPResponse(urllib3.HTTPResponse):
                 self.status, 'Server' if self.status >= 500 else 'Client', self.url))
 
 
-_DEFAULT_POOL = PoolManager()
+_DEFAULT_POOL: PoolManagerExt | None = None
 
 
 def request(*args, **kwargs):
+    global _DEFAULT_POOL
+    if not _DEFAULT_POOL:
+        _DEFAULT_POOL = PoolManager()
     return _DEFAULT_POOL.request(*args, **kwargs)
