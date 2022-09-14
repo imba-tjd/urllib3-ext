@@ -1,4 +1,3 @@
-'''Drop-in replacement of PoolManager'''
 __all__ = ('PoolManager', 'HTTPResponse', 'request')
 
 from functools import cached_property
@@ -78,7 +77,7 @@ class HTTPResponse(urllib3.HTTPResponse):
 
     @cached_property
     def cookies(self):
-        return {k: v for c in self.headers.getlist('set-cookie') for k, v in c[:c.find(';')].split('=')}
+        return dict(c[:c.find(';')].split('=') for c in self.headers.getlist('set-cookie'))
 
     @property
     def encoding(self):
